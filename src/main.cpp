@@ -1,25 +1,13 @@
 #include <fstream>
 #include <iostream>
+#include <cstring>
 #include <string>
 
-// Unpacks little-endian to an integer.
-// Note: casting to "unsigned char" because std::ifstream reads "char" by
-// default, but in file there might be some sequences that don't fit into
-// a "char" (value >127), therefore it overflows (becomes negative).
-// Here we are converting those negative values to unsigned char.
-// Maybe it can be fixed by providing a type to basic_ifstream<char_type>,
-// but not sure which one.
-
-uint16_t le_ch_to_ui16(char* ch) {
-  return static_cast<unsigned char>(ch[0])
-    | static_cast<unsigned char>(ch[1]) << 8;
-}
-
-uint32_t le_ch_to_ui32(char* ch) {
-  return static_cast<unsigned char>(ch[0])
-    | static_cast<unsigned char>(ch[1]) << 8
-    | static_cast<unsigned char>(ch[2]) << 16
-    | static_cast<unsigned char>(ch[3]) << 24;
+template <typename T>
+T ch_to_i(const char* ch) {
+  T val;
+  std::memcpy(&val, ch, sizeof(T));
+  return val;
 }
 
 int main() {
@@ -38,8 +26,6 @@ int main() {
 
   char chunk_size[4];
   file.read(chunk_size, 4);
-
-  auto chunk_size_i = static_cast<std::uintmax_t>(le_ch_to_ui32(chunk_size));
 
   char format[5];
   format[4] = '\0';
@@ -65,14 +51,14 @@ int main() {
   file.read(byte_range, 4);
 
   std::cout << "ChunkID: " << chunk_id << "\n";
-  std::cout << "ChunkSize: " << chunk_size_i << "\n";
+  std::cout << "ChunkSize: " << ch_to_i<uint32_t>(chunk_size) << "\n";
   std::cout << "Format: " << format << "\n";
   std::cout << "Subchunk1ID: " << subchunk1_id << "\n";
-  std::cout << "Subchunk1Size: " << le_ch_to_ui32(subchunk1_size) << "\n";
-  std::cout << "AudioFormat: " << le_ch_to_ui16(audio_format) << "\n";
-  std::cout << "NumChannels: " << le_ch_to_ui16(num_channels) << "\n";
-  std::cout << "SampleRate: " << le_ch_to_ui32(sample_rate) << "\n";
-  std::cout << "ByteRange: " << le_ch_to_ui32(byte_range) << "\n";
+  std::cout << "Subchunk1Size: " << ch_to_i<uint32_t>(subchunk1_size) << "\n";
+  std::cout << "AudioFormat: " << ch_to_i<uint16_t>(audio_format) << "\n";
+  std::cout << "NumChannels: " << ch_to_i<uint16_t>(num_channels) << "\n";
+  std::cout << "SampleRate: " << ch_to_i<uint32_t>(sample_rate) << "\n";
+  std::cout << "ByteRange: " << ch_to_i<uint32_t>(byte_range) << "\n";
 
   return 0;
 }
