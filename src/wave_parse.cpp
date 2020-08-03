@@ -1,6 +1,6 @@
 #include <cassert>
 #include <cstring>
-#include "wave_parser.h"
+#include "wave_parse.h"
 
 // Used to read multi-byte integers from a WAVE file.
 // Copies little-endian char array (extracted from binary WAVE file)
@@ -42,11 +42,11 @@ std::ifstream& read_str(
 
 template <typename T>
 std::ifstream& read_num(std::ifstream& file, T& num) {
-  // sizeof inline to init array at compile-time
-  // otherwise "ch_to_i" template would not know the size of the array
-  char ch[sizeof(T)];
+  constexpr auto size = sizeof(T);
 
-  file.read(ch, sizeof(T));
+  char ch[size];
+
+  file.read(ch, size);
 
   num = ch_to_i<T>(ch);
 
@@ -87,14 +87,24 @@ bool wave_parse(WaveFile& wave, std::ifstream& file) {
 
   // Skip chunk name "data"
   skip(file, 4);
-  read_num(file, wave.data_size);
 
-  // skip(
+  uint32_t data_size_bytes;
 
-  // char format[5];
-  // format[4] = '\0';
-  // file.read(format, 4);
-  // file.get(wave.format, 4);
+  read_num(file, data_size_bytes);
+
+  char data[data_size_bytes];
+  file.read(data, data_size_bytes);
+
+  // int16_t consists of two chars, means that the int16_t[] is two times
+  // smaller.
+
+  wave.data_size = data_size_bytes / 2;
+
+  // bit cast chars to int16_t
+  // TODO: looks shit because a lot of copy (file -> char -> int16_t)
+  int16_t i_data[wave.data_size];
+  std::memcpy(i_data, data, sizeof(i_data));
+  wave.data = i_data;
 
   return true;
 }
