@@ -6,6 +6,7 @@ set(CMAKE_BUILD_TYPE Debug)
 
 add_executable(bpm
   src/main.cpp
+  src/ppm_image.cpp
   src/wave_parse.cpp
   src/wave_plot.cpp
 )
