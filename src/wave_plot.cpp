@@ -40,7 +40,13 @@ private:
 
 // exports PPM image (P6 binary)
 // https://en.wikipedia.org/wiki/Netpbm
-void wave_plot(const WaveFile& wave, std::ofstream& ofs) {
+void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
+  std::ofstream image_file(filename, std::ios::trunc);
+
+  if (!image_file) {
+    throw wave_plot_error("Cant open file");
+  }
+
   // 8-bit samples are stored as unsigned bytes, ranging from 0 to 255
   // 16-bit samples are stored as 2's-complement signed integers,
   // ranging from -32768 to 32767
@@ -48,7 +54,7 @@ void wave_plot(const WaveFile& wave, std::ofstream& ofs) {
 
   // Ratio how much original data should be shrinked, because all of the
   // data in 1:1 ratio probably won't fit
-  constexpr size_t samples_per_group = 100;
+  constexpr size_t samples_per_group = 50;
   constexpr auto amplitude_divider = 100;
 
   // Divide width by 2 because two channels will be displayed one under another
@@ -77,9 +83,9 @@ void wave_plot(const WaveFile& wave, std::ofstream& ofs) {
     // Flip the sign because image coordinates start at top left,
     // but samples are recorded if it were at bottom left.
     if (i % 2 == 0) {
-      left_group.apply(-wave.data[i]);
+      left_group.apply(wave.data[i]);
     } else {
-      right_group.apply(-wave.data[i]);
+      right_group.apply(wave.data[i]);
       group_index++;
     }
 
@@ -120,5 +126,5 @@ void wave_plot(const WaveFile& wave, std::ofstream& ofs) {
     }
   }
 
-  ofs << image;
+  image_file << image;
 }

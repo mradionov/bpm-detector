@@ -23,7 +23,7 @@ int main() {
     wave_parse(wave, file);
   } catch (wave_parse_error err) {
     std::cout << "Wave parse error: " << err.what() << std::endl;
-    exit(1);
+    return 1;
   }
 
   std::cout << "Identifier: " << wave.identifier << "\n";
@@ -41,17 +41,12 @@ int main() {
   // std::cout << "sample 3: " << wave.data[2] << "\n";
   // std::cout << "sample 4: " << wave.data[3] << "\n";
 
-  std::ofstream image_file(
-    "../test/data/image.ppm",
-    std::ios::trunc
-  );
-
-  if (!image_file) {
-    std::cerr << "Cant open image file" << std::endl;
+  try {
+    wave_plot_amplitude(wave, "../test/data/image.ppm");
+  } catch (wave_plot_error err) {
+    std::cout << "Wave plot error: " << err.what() << std::endl;
     return 1;
   }
-
-  wave_plot(wave, image_file);
 
   return 0;
 }
