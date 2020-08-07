@@ -4,6 +4,6 @@
 #include <fstream>
 #include "wave_file.h"
 
-bool wave_plot(const WaveFile&, std::ofstream&);
+void wave_plot(const WaveFile&, std::ofstream&);
 
 #endif
