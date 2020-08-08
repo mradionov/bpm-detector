@@ -3,7 +3,6 @@
 
 #include <cstddef>
 #include <fstream>
-#include <tuple>
 #include <vector>
 
 using PpmColor = unsigned char;
@@ -26,6 +25,9 @@ public:
   void set_color(const PpmColor, const PpmColor, const PpmColor);
   void set_color(const PpmPixel);
   void draw_pixel(const size_t, const size_t);
+  void draw_column(const size_t, const size_t, const size_t);
+  void draw_row(const size_t, const size_t, const size_t);
+  void draw_rect(const size_t, const size_t, const size_t, const size_t);
   const PpmPixel get_pixel(const size_t, const size_t) const;
 private:
   size_t m_width;

@@ -69,6 +69,8 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
   ) * 2;
 
   PpmImage image(image_width, image_height);
+  image.set_color(255, 255, 255);
+  image.draw_rect(0, 0, image_width, image_height);
 
   SampleGroup<int16_t> left_group;
   SampleGroup<int16_t> right_group;
@@ -77,6 +79,8 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
 
   std::cout << "image_width: " << image_width << std::endl;
   std::cout << "image_height: " << image_height << std::endl;
+
+  image.set_color(255, 0, 0);
 
   size_t image_x = 0;
   for (size_t i = 0; i < wave.data_size; ++i) {
@@ -89,7 +93,7 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
       group_index++;
     }
 
-    if (group_index == samples_per_group) {
+    if (group_index == samples_per_group || i == wave.data_size - 1) {
       // Resize it according to image, so it will take half of the height
       const auto left_top = image_height / 4
         + left_group.min() / amplitude_divider * -1;
@@ -101,23 +105,8 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
       const auto right_bottom = image_height / 4 * 3
         + right_group.max() / amplitude_divider * -1;
 
-      for (size_t image_y = 0; image_y < image_height; ++image_y) {
-        if (image_y >= left_top && image_y <= left_bottom) {
-          image.set_color(255, 0, 0);
-          image.draw_pixel(image_x, image_y);
-        } else if (image_y >= right_top && image_y <= right_bottom) {
-          image.set_color(255, 0, 0);
-          image.draw_pixel(image_x, image_y);
-        } else {
-          image.set_color(255, 255, 255);
-          image.draw_pixel(image_x, image_y);
-        }
-
-        if (image_y == image_height / 2) {
-          image.set_color(0, 0, 0);
-          image.draw_pixel(image_x, image_y);
-        }
-      }
+      image.draw_column(image_x, left_top, left_bottom);
+      image.draw_column(image_x, right_top, right_bottom);
 
       left_group.reset();
       right_group.reset();
@@ -125,6 +114,9 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
       group_index = 0;
     }
   }
+
+  image.set_color(0, 0, 0);
+  image.draw_row(image_height / 2, 0, image_width);
 
   image_file << image;
 }

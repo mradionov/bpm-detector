@@ -48,6 +48,42 @@ void PpmImage::draw_pixel(const size_t x, const size_t y) {
   m_pixels[i].set(m_color);
 }
 
+void PpmImage::draw_column(
+  const size_t x,
+  const size_t y_start,
+  const size_t y_end
+) {
+  for (size_t y = y_start; y < y_end; ++y) {
+    draw_pixel(x, y);
+  }
+}
+
+void PpmImage::draw_row(
+  const size_t y,
+  const size_t x_start,
+  const size_t x_end
+) {
+  for (size_t x = x_start; x < x_end; ++x) {
+    draw_pixel(x, y);
+  }
+}
+
+void PpmImage::draw_rect(
+  const size_t x_start,
+  const size_t y_start,
+  const size_t width,
+  const size_t height
+) {
+  const auto x_end = x_start + width;
+  const auto y_end = y_start + height;
+
+  for (size_t y = y_start; y < y_end; ++y) {
+    for (size_t x = x_start; x < x_end; ++x) {
+      draw_pixel(x, y);
+    }
+  }
+}
+
 const PpmPixel PpmImage::get_pixel(const size_t x, const size_t y) const {
   const auto i = index(x, y);
   return m_pixels[i];
