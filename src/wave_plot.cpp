@@ -92,14 +92,14 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
     if (group_index == samples_per_group) {
       // Resize it according to image, so it will take half of the height
       const auto left_top = image_height / 4
-        + left_group.max() / amplitude_divider;
+        + left_group.min() / amplitude_divider * -1;
       const auto left_bottom = image_height / 4
-        + left_group.min() / amplitude_divider;
+        + left_group.max() / amplitude_divider * -1;
 
       const auto right_top = image_height / 4 * 3
-        + right_group.max() / amplitude_divider;
+        + right_group.min() / amplitude_divider * -1;
       const auto right_bottom = image_height / 4 * 3
-        + right_group.min() / amplitude_divider;
+        + right_group.max() / amplitude_divider * -1;
 
       for (size_t image_y = 0; image_y < image_height; ++image_y) {
         if (image_y >= left_top && image_y <= left_bottom) {
