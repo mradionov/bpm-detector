@@ -24,7 +24,7 @@ int main() {
   try {
     wave_parse(wave, file);
   } catch (wave_parse_error err) {
-    std::cout << "Wave parse error: " << err.what() << std::endl;
+    std::cout << "Error.\nWave parse error: " << err.what() << std::endl;
     return 1;
   }
 

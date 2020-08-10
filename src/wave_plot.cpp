@@ -56,8 +56,8 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
   constexpr auto max_amplitude = std::numeric_limits<int16_t>::max();
 
   // Calculate how many samples are per pixel (per 1px image column)
-  const auto samples_per_group = std::ceil(
-    static_cast<double>(wave.data_size) / image_width / wave.num_channels
+  const auto samples_per_group = std::floor(
+    static_cast<double>(wave.data_size) / image_width
   );
 
   // How much amplitude will be shrinked
@@ -71,45 +71,43 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
   SampleGroup<int16_t> left_group;
   SampleGroup<int16_t> right_group;
 
-  size_t group_index = 0;
-
   std::cout << "image_width: " << image_width << std::endl;
   std::cout << "image_height: " << image_height << std::endl;
+  std::cout << "samples_per_group: " << samples_per_group << std::endl;
+  std::cout << "amplitude_divider: " << amplitude_divider << std::endl;
 
   image.set_color(255, 0, 0);
 
-  size_t image_x = 0;
-  for (size_t i = 0; i < wave.data_size; ++i) {
-    // Flip the sign because image coordinates start at top left,
-    // but samples are recorded if it were at bottom left.
-    if (i % 2 == 0) {
-      left_group.apply(wave.data[i]);
-    } else {
-      right_group.apply(wave.data[i]);
-      group_index++;
+  for (size_t image_x = 0; image_x < image_width; ++image_x) {
+    const auto data_start = image_x * samples_per_group;
+    const auto data_end = std::min(
+      wave.data_size,
+      static_cast<uint32_t>(data_start + samples_per_group)
+    );
+
+    for (size_t i = data_start; i < data_end; ++i) {
+      if (i % 2 == 0) {
+        left_group.apply(wave.data[i]);
+      } else {
+        right_group.apply(wave.data[i]);
+      }
     }
 
-    // Last group most likely won't be full, make sure not to lose it's samples
-    if (group_index == samples_per_group || i == wave.data_size - 1) {
-      // Resize it according to image, so it will take half of the height
-      const auto left_top = image_height / 4
-        + left_group.max() / amplitude_divider * -1;
-      const auto left_bottom = image_height / 4
-        + left_group.min() / amplitude_divider * -1;
+    const auto left_top = image_height / 4
+      + left_group.max() / amplitude_divider * -1;
+    const auto left_bottom = image_height / 4
+      + left_group.min() / amplitude_divider * -1;
 
-      const auto right_top = image_height / 4 * 3
-        + right_group.max() / amplitude_divider * -1;
-      const auto right_bottom = image_height / 4 * 3
-        + right_group.min() / amplitude_divider * -1;
+    const auto right_top = image_height / 4 * 3
+      + right_group.max() / amplitude_divider * -1;
+    const auto right_bottom = image_height / 4 * 3
+      + right_group.min() / amplitude_divider * -1;
 
-      image.draw_column(image_x, left_top, left_bottom);
-      image.draw_column(image_x, right_top, right_bottom);
+    image.draw_column(image_x, left_top, left_bottom);
+    image.draw_column(image_x, right_top, right_bottom);
 
-      left_group.reset();
-      right_group.reset();
-      image_x++;
-      group_index = 0;
-    }
+    left_group.reset();
+    right_group.reset();
   }
 
   image.set_color(0, 0, 0);
