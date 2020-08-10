@@ -12,10 +12,10 @@ public:
   SampleGroup(): m_min(0), m_max(0) {}
 
   void apply(const T val) {
-    if (m_min < val) {
+    if (val < m_min) {
       m_min = val;
     }
-    if (m_max > val) {
+    if (val > m_max) {
       m_max = val;
     }
   }
@@ -47,26 +47,22 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
     throw wave_plot_error("Cant open file");
   }
 
+  constexpr size_t image_width = 2000;
+  constexpr size_t image_height = 800;
+
   // 8-bit samples are stored as unsigned bytes, ranging from 0 to 255
   // 16-bit samples are stored as 2's-complement signed integers,
   // ranging from -32768 to 32767
   constexpr auto max_amplitude = std::numeric_limits<int16_t>::max();
 
-  // Ratio how much original data should be shrinked, because all of the
-  // data in 1:1 ratio probably won't fit
-  constexpr size_t samples_per_group = 50;
-  constexpr auto amplitude_divider = 100;
-
-  // Divide width by 2 because two channels will be displayed one under another
-  // Multiply height by 2 for the same reason.
-  // Last group most likely won't be full, make sure not to lose samples from
-  // it though.
-  const size_t image_width = std::ceil(
-    static_cast<double>(wave.data_size) / samples_per_group / 2
+  // Calculate how many samples are per pixel (per 1px image column)
+  const auto samples_per_group = std::ceil(
+    static_cast<double>(wave.data_size) / image_width / wave.num_channels
   );
-  const size_t image_height = std::ceil(
-    max_amplitude * 2 / amplitude_divider
-  ) * 2;
+
+  // How much amplitude will be shrinked
+  const auto amplitude_divider = static_cast<double>(max_amplitude * 2)
+    / image_height * 2;
 
   PpmImage image(image_width, image_height);
   image.set_color(255, 255, 255);
@@ -93,17 +89,18 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
       group_index++;
     }
 
+    // Last group most likely won't be full, make sure not to lose it's samples
     if (group_index == samples_per_group || i == wave.data_size - 1) {
       // Resize it according to image, so it will take half of the height
       const auto left_top = image_height / 4
-        + left_group.min() / amplitude_divider * -1;
-      const auto left_bottom = image_height / 4
         + left_group.max() / amplitude_divider * -1;
+      const auto left_bottom = image_height / 4
+        + left_group.min() / amplitude_divider * -1;
 
       const auto right_top = image_height / 4 * 3
-        + right_group.min() / amplitude_divider * -1;
-      const auto right_bottom = image_height / 4 * 3
         + right_group.max() / amplitude_divider * -1;
+      const auto right_bottom = image_height / 4 * 3
+        + right_group.min() / amplitude_divider * -1;
 
       image.draw_column(image_x, left_top, left_bottom);
       image.draw_column(image_x, right_top, right_bottom);

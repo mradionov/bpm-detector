@@ -1,3 +1,6 @@
 build/
 
-*.ppm
+test/data/*.ppm
+test/data/test2.wav
+test/data/test3.wav
+test/data/test4.wav

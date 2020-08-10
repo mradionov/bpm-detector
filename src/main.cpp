@@ -17,6 +17,8 @@ int main() {
     return 1;
   }
 
+  std::cout << "Parsing file '" << audio_filename << "'... ";
+
   WaveFile wave;
 
   try {
@@ -25,6 +27,8 @@ int main() {
     std::cout << "Wave parse error: " << err.what() << std::endl;
     return 1;
   }
+
+  std::cout << "Done.\n";
 
   std::cout << "Identifier: " << wave.identifier << "\n";
   std::cout << "Format: " << wave.format << "\n";
@@ -36,10 +40,10 @@ int main() {
   std::cout << "BitsPerSample: " << wave.bits_per_sample << "\n";
   std::cout << "DataSize: " << wave.data_size << "\n";
 
-  // std::cout << "sample 1: " << wave.data[0] << "\n";
-  // std::cout << "sample 2: " << wave.data[1] << "\n";
-  // std::cout << "sample 3: " << wave.data[2] << "\n";
-  // std::cout << "sample 4: " << wave.data[3] << "\n";
+  std::cout << "sample 1: " << wave.data[0] << "\n";
+  std::cout << "sample 2: " << wave.data[1] << "\n";
+  std::cout << "sample 3: " << wave.data[2] << "\n";
+  std::cout << "sample 4: " << wave.data[3] << "\n";
 
   try {
     wave_plot_amplitude(wave, "../test/data/image.ppm");
