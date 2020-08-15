@@ -1,8 +1,5 @@
 #include <fstream>
 #include <iostream>
-#include <string>
-#include <limits>
-#include <cmath>
 #include "wave_file.h"
 #include "wave_parse.h"
 #include "wave_plot.h"

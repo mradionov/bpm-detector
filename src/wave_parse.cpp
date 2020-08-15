@@ -5,6 +5,11 @@
 #include <sstream>
 #include "wave_parse.h"
 
+const char* kIdentifier = "RIFF";
+const char* kFormat = "WAVE";
+const char* kFmtId = "fmt ";
+const char* kDataId = "data";
+
 // Used to read multi-byte integers from a WAVE file.
 // Copies little-endian char array (extracted from binary WAVE file)
 // to little-endian type (most-likely integer).
@@ -79,29 +84,24 @@ std::ifstream& skip(std::ifstream& file, const std::streamsize size) {
 
 // http://soundfile.sapp.org/doc/WaveFormat/
 void wave_parse(WaveFile& wave, std::ifstream& file) {
-  static const char* IDENTIFIER = "RIFF";
-  static const char* FORMAT = "WAVE";
-  static const char* FMT_ID = "fmt ";
-  static const char* DATA_ID = "data";
-
   // Main chunk
 
   WaveFile tmp;
 
   read_str(file, tmp.identifier);
 
-  if (tmp.identifier != IDENTIFIER) {
+  if (tmp.identifier != kIdentifier) {
     std::stringstream message;
-    message << "Identifier '" << IDENTIFIER << "' not found";
+    message << "Identifier '" << kIdentifier << "' not found";
     throw wave_parse_error(message.str());
   }
 
   read_num(file, tmp.chunk_size);
   read_str(file, tmp.format);
 
-  if (tmp.format != FORMAT) {
+  if (tmp.format != kFormat) {
     std::stringstream message;
-    message << "Format '" << FORMAT << "' not found";
+    message << "Format '" << kFormat << "' not found";
     throw wave_parse_error(message.str());
   }
 
@@ -110,9 +110,9 @@ void wave_parse(WaveFile& wave, std::ifstream& file) {
   std::string fmt_id;
   read_str(file, fmt_id);
 
-  if (fmt_id != FMT_ID) {
+  if (fmt_id != kFmtId) {
     std::stringstream message;
-    message << "Subchunk '" << FMT_ID << "' ID not found";
+    message << "Subchunk '" << kFmtId << "' ID not found";
     throw wave_parse_error(message.str());
   }
 
@@ -137,9 +137,9 @@ void wave_parse(WaveFile& wave, std::ifstream& file) {
   std::string data_id;
   read_str(file, data_id);
 
-  if (data_id != DATA_ID) {
+  if (data_id != kDataId) {
     std::stringstream message;
-    message << "Data '" << DATA_ID << "' ID not found";
+    message << "Data '" << kDataId << "' ID not found";
     throw wave_parse_error(message.str());
   }
 

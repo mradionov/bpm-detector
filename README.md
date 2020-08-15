@@ -1,3 +1,29 @@
+### Build
+
+Prepare directory:
+
+```bash
+mkdir build
+cd build
+
+```
+
+Build and run main executable:
+
+```bash
+cmake ..
+make
+./bpm
+```
+
+Build with tests:
+
+```bash
+cmake -DBUILD_TESTS=ON ..
+make
+./unit_tests
+```
+
 ### Reference
 
 - http://soundfile.sapp.org/doc/WaveFormat/
