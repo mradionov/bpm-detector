@@ -40,3 +40,11 @@ Types:
 - calculate average without sum overflow
 - how to write chars to file
 - proper rendering of values in the image
+
+### Extra
+
+View file in hex:
+
+```bash
+xxd -g 1 test.wav | less
+```

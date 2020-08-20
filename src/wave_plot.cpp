@@ -57,7 +57,7 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
 
   // Calculate how many samples are per pixel (per 1px image column)
   const auto samples_per_group = std::floor(
-    static_cast<double>(wave.data_size) / image_width
+    static_cast<double>(wave.samples_size) / image_width
   );
 
   // How much amplitude will be shrinked
@@ -81,15 +81,15 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
   for (size_t image_x = 0; image_x < image_width; ++image_x) {
     const auto data_start = image_x * samples_per_group;
     const auto data_end = std::min(
-      wave.data_size,
+      wave.samples_size,
       static_cast<uint32_t>(data_start + samples_per_group)
     );
 
     for (size_t i = data_start; i < data_end; ++i) {
       if (i % 2 == 0) {
-        left_group.apply(wave.data[i]);
+        left_group.apply(wave.samples[i]);
       } else {
-        right_group.apply(wave.data[i]);
+        right_group.apply(wave.samples[i]);
       }
     }
 

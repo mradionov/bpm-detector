@@ -3,92 +3,31 @@
 #include <iostream>
 #include <memory>
 #include <sstream>
+#include <vector>
+#include "bytestream_reader.h"
 #include "wave_parse.h"
 
 const char* kIdentifier = "RIFF";
 const char* kFormat = "WAVE";
 const char* kFmtId = "fmt ";
 const char* kDataId = "data";
+const uint16_t kAudioFormatPcm = 1;
 
-// Used to read multi-byte integers from a WAVE file.
-// Copies little-endian char array (extracted from binary WAVE file)
-// to little-endian type (most-likely integer).
-// Similar to https://en.cppreference.com/w/cpp/numeric/bit_cast
-template <typename T>
-T ch_to_i(
-  const char* ch,
-  std::enable_if_t<std::is_trivially_copyable<T>::value, int> = 0
-) {
-  static_assert(
-    std::is_trivially_constructible<T>::value,
-    "Provided int has to be trivially constructible"
-  );
-
-  // TODO: Why fails?
-  // assert(sizeof(ch) == sizeof(T));
-
-  T val;
-  std::memcpy(&val, ch, sizeof(T));
-  return val;
-}
-
-std::ifstream& read_str(
-  std::ifstream& file,
-  std::string& str,
-  const std::streamsize size = 4
-) {
-  // TODO: can read right intro string?
-  char ch[size + 1];
-  ch[size] = '\0';
-
-  file.read(ch, size);
-
-  str = std::string(ch);
-
-  return file;
-}
-
-std::ifstream& peek_str(
-  std::ifstream& file,
-  std::string& str,
-  const std::streamsize size = 4
-) {
-  // TODO: can read right intro string?
-  char ch[size + 1];
-  ch[size] = '\0';
-
-  file.read(ch, size);
-
-  str = std::string(ch);
-
-  return file;
-}
-
-template <typename T>
-std::ifstream& read_num(std::ifstream& file, T& num) {
-  constexpr auto size = sizeof(T);
-
-  char ch[size];
-
-  file.read(ch, size);
-
-  num = ch_to_i<T>(ch);
-
-  return file;
-}
-
-std::ifstream& skip(std::ifstream& file, const std::streamsize size) {
-  file.ignore(size);
-  return file;
-}
+const char* kUnexpectedEndMsg = "Unexpected end of data";
 
 // http://soundfile.sapp.org/doc/WaveFormat/
-void wave_parse(WaveFile& wave, std::ifstream& file) {
-  // Main chunk
+void wave_parse(WaveFile& wave, const std::vector<unsigned char>& data) {
+  if (data.size() == 0) {
+    throw wave_parse_error("Empty data");
+  }
 
   WaveFile tmp;
 
-  read_str(file, tmp.identifier);
+  BytestreamReader reader(data);
+
+  if (!reader.read_str(tmp.identifier, 4)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
 
   if (tmp.identifier != kIdentifier) {
     std::stringstream message;
@@ -96,8 +35,20 @@ void wave_parse(WaveFile& wave, std::ifstream& file) {
     throw wave_parse_error(message.str());
   }
 
-  read_num(file, tmp.chunk_size);
-  read_str(file, tmp.format);
+  if (!reader.read_u32(tmp.chunk_size)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
+
+  // "chunk_size" is the size of the entire file in bytes minus 8 bytes for the
+  // two fields not included in this count:
+  //  "identifier" and "chunk_size" itself.
+  if (tmp.chunk_size != reader.left()) {
+    throw wave_parse_error("Chunk size does not match file size");
+  }
+
+  if (!reader.read_str(tmp.format, 4)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
 
   if (tmp.format != kFormat) {
     std::stringstream message;
@@ -108,55 +59,93 @@ void wave_parse(WaveFile& wave, std::ifstream& file) {
   // fmt chunk
 
   std::string fmt_id;
-  read_str(file, fmt_id);
+  if (!reader.read_str(fmt_id, 4)) {
+   throw wave_parse_error(kUnexpectedEndMsg);
+  }
 
   if (fmt_id != kFmtId) {
     std::stringstream message;
-    message << "Subchunk '" << kFmtId << "' ID not found";
+    message << "Subchunk ID '" << kFmtId << "' not found";
     throw wave_parse_error(message.str());
   }
 
   uint32_t subchunk1_size;
-  read_num(file, subchunk1_size);
+  if (!reader.read_u32(subchunk1_size)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
 
-  auto subchunk1_end_pos = static_cast<uint32_t>(file.tellg())
+  const auto subchunk1_end_pos = static_cast<uint32_t>(reader.pos())
     + subchunk1_size;
 
-  read_num(file, tmp.audio_format);
-  read_num(file, tmp.num_channels);
-  read_num(file, tmp.sample_rate);
-  read_num(file, tmp.byte_range);
-  read_num(file, tmp.block_align);
-  read_num(file, tmp.bits_per_sample);
+  if (!reader.read_u16(tmp.audio_format)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
+  if (tmp.audio_format != kAudioFormatPcm) {
+    throw wave_parse_error("Unsupported audio format");
+  }
 
-  file.seekg(subchunk1_end_pos);
+  if (!reader.read_u16(tmp.num_channels)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
+  if (tmp.num_channels > 2) {
+    throw wave_parse_error("Unsupported number of channels");
+  }
 
+  if (!reader.read_u32(tmp.sample_rate)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
+
+  if (!reader.read_u32(tmp.byte_rate)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
+
+  if (!reader.read_u16(tmp.block_align)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
+
+  if (!reader.read_u16(tmp.bits_per_sample)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
+  if (tmp.bits_per_sample != 16) {
+    throw wave_parse_error("Unsupported bits per sample value");
+  }
+
+  if (!reader.seek(subchunk1_end_pos)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
 
   // data chunk
 
   std::string data_id;
-  read_str(file, data_id);
+  if (!reader.read_str(data_id, 4)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
 
   if (data_id != kDataId) {
     std::stringstream message;
-    message << "Data '" << kDataId << "' ID not found";
+    message << "Data ID '" << kDataId << "' not found";
     throw wave_parse_error(message.str());
   }
 
-  uint32_t data_size;
-  read_num(file, data_size);
-
-  auto data = std::make_unique<char[]>(data_size);
-  file.read(data.get(), data_size);
+  uint32_t samples_size;
+  if (!reader.read_u32(samples_size)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
 
   // int16_t consists of two chars, means that the int16_t[] is two times
   // smaller.
-  auto i_data_size = data_size / 2;
-  auto i_data = std::make_unique<int16_t[]>(i_data_size);
-  std::memcpy(i_data.get(), data.get(), data_size);
+  const auto i_samples_size = samples_size / 2;
 
-  tmp.data_size = i_data_size;
-  tmp.data = std::move(i_data);
+  auto samples = std::make_unique<unsigned char[]>(samples_size);
+  if (!reader.read_bytes(samples.get(), samples_size)) {
+    throw wave_parse_error(kUnexpectedEndMsg);
+  }
+
+  auto i_samples = std::make_unique<int16_t[]>(i_samples_size);
+  std::memcpy(i_samples.get(), samples.get(), samples_size);
+
+  tmp.samples_size = i_samples_size;
+  tmp.samples = std::move(i_samples);
 
   wave = std::move(tmp);
 }
