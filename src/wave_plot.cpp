@@ -40,13 +40,7 @@ private:
 
 // exports PPM image (P6 binary)
 // https://en.wikipedia.org/wiki/Netpbm
-void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
-  std::ofstream image_file(filename, std::ios::trunc);
-
-  if (!image_file) {
-    throw wave_plot_error("Cant open file");
-  }
-
+PpmImage wave_plot_amplitude(const WaveFile& wave) {
   constexpr size_t image_width = 2000;
   constexpr size_t image_height = 800;
 
@@ -56,8 +50,12 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
   constexpr auto max_amplitude = std::numeric_limits<int16_t>::max();
 
   // Calculate how many samples are per pixel (per 1px image column)
-  const auto samples_per_group = std::floor(
-    static_cast<double>(wave.samples_size) / image_width
+  const auto samples_per_group = std::max(
+    std::floor(static_cast<double>(wave.samples_size) / image_width),
+    1.0
+  );
+  const auto group_width = std::floor(
+    static_cast<double>(image_width) / wave.samples_size
   );
 
   // How much amplitude will be shrinked
@@ -75,6 +73,7 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
   std::cout << "image_height: " << image_height << std::endl;
   std::cout << "samples_per_group: " << samples_per_group << std::endl;
   std::cout << "amplitude_divider: " << amplitude_divider << std::endl;
+  std::cout << "group_width: " << group_width << std::endl;
 
   image.set_color(255, 0, 0);
 
@@ -113,5 +112,5 @@ void wave_plot_amplitude(const WaveFile& wave, const std::string filename) {
   image.set_color(0, 0, 0);
   image.draw_row(image_height / 2, 0, image_width);
 
-  image_file << image;
+  return image;
 }

@@ -1,12 +1,14 @@
+#include <complex>
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include "fourier_transform.h"
 #include "wave_file.h"
 #include "wave_parse.h"
 #include "wave_plot.h"
 
 int main() {
-  const char* audio_filename = "../test/data/test5.wav";
+  const char* audio_filename = "../test/data/test6.wav";
 
   std::ifstream file(audio_filename, std::ios::binary);
 
@@ -44,18 +46,19 @@ int main() {
   std::cout << "BitsPerSample: " << wave.bits_per_sample << "\n";
   std::cout << "SampleSize: " << wave.samples_size << "\n";
 
-  std::cout << "sample 1: " << wave.samples[0] << "\n";
-  std::cout << "sample 2: " << wave.samples[1] << "\n";
-  std::cout << "sample 3: " << wave.samples[2] << "\n";
-  std::cout << "sample 4: " << wave.samples[3] << "\n";
-  std::cout << std::endl;
+  for (size_t i = 0; i < 10; i++) {
+    std::cout << "sample " << i << ": " << wave.samples[i] << "\n";
+  }
+  std::cout << "\n";
 
-  try {
-    wave_plot_amplitude(wave, "../test/data/image.ppm");
-  } catch (wave_plot_error err) {
-    std::cout << "Wave plot error: " << err.what() << std::endl;
+  const char* plot_filename = "../test/data/image.ppm";
+  std::ofstream image_file(plot_filename, std::ios::trunc);
+  if (!image_file) {
+    std::cout << "Main: can't open plot file" << std::endl;
     return 1;
   }
+
+  image_file << wave_plot_amplitude(wave);
 
   return 0;
 }

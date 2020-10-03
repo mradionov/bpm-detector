@@ -10,6 +10,7 @@ set(CATCH_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/extern/catch)
 
 set(BPM_SOURCE_FILES
   ${BPM_SOURCE_DIR}/bytestream_reader.cpp
+  ${BPM_SOURCE_DIR}/fourier_transform.cpp
   ${BPM_SOURCE_DIR}/ppm_image.cpp
   ${BPM_SOURCE_DIR}/wave_parse.cpp
   ${BPM_SOURCE_DIR}/wave_plot.cpp
@@ -17,6 +18,7 @@ set(BPM_SOURCE_FILES
 
 set(BPM_TEST_FILES
   ${BPM_SOURCE_DIR}/bytestream_reader_unittest.cpp
+  ${BPM_SOURCE_DIR}/fourier_transform_unittest.cpp
   ${BPM_SOURCE_DIR}/wave_parse_unittest.cpp
 )
 
